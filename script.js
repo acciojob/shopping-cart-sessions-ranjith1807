@@ -13,11 +13,14 @@ const clearCartBtn = document.getElementById("clear-cart-btn");
 
 // ✅ Safe function to get cart
 function getCart() {
-  let cart = sessionStorage.getItem("cart");
+  const data = sessionStorage.getItem("cart");
+
+  // 🔥 CRITICAL: do NOT break if already valid JSON string
+  if (!data) return [];
 
   try {
-    return cart ? JSON.parse(cart) : [];
-  } catch (e) {
+    return JSON.parse(data);
+  } catch {
     return [];
   }
 }
@@ -57,17 +60,15 @@ function renderCart() {
 // ✅ Add to Cart (FIXED)
 function addToCart(productId) {
   const product = products.find(
-    (p) => p.id === parseInt(productId)
+    (p) => p.id === Number(productId)
   );
 
   if (!product) return;
 
-  const cart = getCart();   // 🔥 Always get existing cart
-  cart.push(product);       // 🔥 Append (do NOT overwrite)
+  const cart = getCart();   // must preserve existing
+  cart.push(product);
 
   sessionStorage.setItem("cart", JSON.stringify(cart));
-
-  renderCart();
 }
 
 
