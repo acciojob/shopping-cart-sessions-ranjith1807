@@ -9,16 +9,17 @@ const products = [
 
 // DOM elements
 const productList = document.getElementById("product-list");
-const cartList = document.getElementById("cart-list"); 
+const cartList = document.getElementById("cart-list");
+const clearCartBtn = document.getElementById("clear-cart-btn");
 
-// Render product list
+// Render product list (HTML kept exactly as boilerplate requested)
 function renderProducts() {
   if (!productList) return;
-  productList.innerHTML = ""; 
+  productList.innerHTML = "";
+  
   products.forEach((product) => {
     const li = document.createElement("li");
-    // Added direct 'onclick' attributes so Cypress clicks register 100% of the time
-    li.innerHTML = `${product.name} - $${product.price} <button class="add-to-cart-btn" data-id="${product.id}" onclick="addToCart(${product.id})">Add to Cart</button>`;
+    li.innerHTML = `${product.name} - $${product.price} <button class="add-to-cart-btn" data-id="${product.id}">Add to Cart</button>`;
     productList.appendChild(li);
   });
 }
@@ -26,57 +27,79 @@ function renderProducts() {
 // Render cart list
 function renderCart() {
   if (!cartList) return;
-  cartList.innerHTML = ""; 
+  cartList.innerHTML = "";
   
-  // Always fetch fresh data to sync perfectly with Cypress's background injections
+  // Read fresh from storage
   const cartData = sessionStorage.getItem("cart");
   const cart = cartData ? JSON.parse(cartData) : [];
 
   cart.forEach((item) => {
     const li = document.createElement("li");
-    li.innerHTML = `${item.name} - $${item.price} <button class="remove-from-cart-btn" data-id="${item.id}" onclick="removeFromCart(${item.id})">Remove</button>`;
+    li.innerHTML = `${item.name} - $${item.price} <button class="remove-from-cart-btn" data-id="${item.id}">Remove</button>`;
     cartList.appendChild(li);
   });
 }
 
 // Add item to cart
 function addToCart(productId) {
-  const cartData = sessionStorage.getItem("cart");
-  let cart = cartData ? JSON.parse(cartData) : [];
-  
   const product = products.find((p) => p.id === parseInt(productId));
   
   if (product) {
+    // ALWAYS read the freshest state immediately before modifying
+    const cartData = sessionStorage.getItem("cart");
+    const cart = cartData ? JSON.parse(cartData) : [];
+    
     cart.push(product);
     sessionStorage.setItem("cart", JSON.stringify(cart));
-    renderCart(); // Update the UI
+    renderCart();
   }
 }
 
 // Remove item from cart
 function removeFromCart(productId) {
   const cartData = sessionStorage.getItem("cart");
-  let cart = cartData ? JSON.parse(cartData) : [];
+  const cart = cartData ? JSON.parse(cartData) : [];
   
   const index = cart.findIndex((item) => item.id === parseInt(productId));
   
   if (index !== -1) {
     cart.splice(index, 1);
     sessionStorage.setItem("cart", JSON.stringify(cart));
-    renderCart(); // Update the UI
+    renderCart();
   }
 }
 
 // Clear cart
 function clearCart() {
   sessionStorage.removeItem("cart");
-  renderCart(); // Update the UI
+  renderCart();
 }
 
-// Attach the clear cart function
-const clearCartBtn = document.getElementById("clear-cart-btn");
+// --- Event Listeners ---
+
+// Event delegation for Product List
+if (productList) {
+  productList.addEventListener("click", (e) => {
+    if (e.target.classList.contains("add-to-cart-btn")) {
+      const productId = e.target.getAttribute("data-id");
+      addToCart(productId);
+    }
+  });
+}
+
+// Event delegation for Cart List
+if (cartList) {
+  cartList.addEventListener("click", (e) => {
+    if (e.target.classList.contains("remove-from-cart-btn")) {
+      const productId = e.target.getAttribute("data-id");
+      removeFromCart(productId);
+    }
+  });
+}
+
+// Clear Cart listener
 if (clearCartBtn) {
-  clearCartBtn.onclick = clearCart;
+  clearCartBtn.addEventListener("click", clearCart);
 }
 
 // Initial render
